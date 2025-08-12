@@ -2,7 +2,7 @@
 > This project is very much a work in progress and has not been battle-tested yet. Use at your own risk.
 
 # bug
-Reverse proxy for HTTP/HTTPS services with built-in rate limiting, load balancingand more.
+Reverse proxy for HTTP/HTTPS services with built-in rate limiting, load balancing and more.
 
 ## Features
 * Supports UDP, TCP, and HTTP/HTTPS protocols.
