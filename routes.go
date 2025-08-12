@@ -3,19 +3,18 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
 	"time"
 
-	"github.com/rs/zerolog/log"
-	"github.com/sirupsen/logrus"
-	"github.com/vulcand/oxy/ratelimit"
-	"github.com/vulcand/oxy/utils"
-	"github.com/vulcand/oxy/v2/forward"
-	"github.com/vulcand/oxy/v2/roundrobin"
+    "github.com/rs/zerolog"
+    "github.com/rs/zerolog/log"
+    "github.com/vulcand/oxy/v2/ratelimit"
+    "github.com/vulcand/oxy/v2/utils"
+    "github.com/vulcand/oxy/v2/forward"
+    "github.com/vulcand/oxy/v2/roundrobin"
 )
 
 const (
@@ -38,6 +37,48 @@ func (h *rateLimitErrorHandler) ServeHTTP(w http.ResponseWriter, req *http.Reque
 		Msg("Rate limit exceeded")
 
 	http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+}
+
+// zerologOxyLogger adapts zerolog to oxy/v2 utils.Logger for structured rate-limit logs
+type zerologOxyLogger struct{}
+
+func (zerologOxyLogger) Debug(msg string, fields ...any) {
+    event := log.Debug()
+    addFields(event, fields).Msg(msg)
+}
+
+func (zerologOxyLogger) Info(msg string, fields ...any) {
+    event := log.Info()
+    addFields(event, fields).Msg(msg)
+}
+
+func (zerologOxyLogger) Warn(msg string, fields ...any) {
+    event := log.Warn()
+    addFields(event, fields).Msg(msg)
+}
+
+func (zerologOxyLogger) Error(msg string, fields ...any) {
+    event := log.Error()
+    addFields(event, fields).Msg(msg)
+}
+
+func addFields(event *zerolog.Event, fields []any) *zerolog.Event {
+    // Interpret fields as key-value pairs when possible
+    if len(fields)%2 == 0 && len(fields) > 0 {
+        for i := 0; i < len(fields); i += 2 {
+            key, ok := fields[i].(string)
+            if !ok {
+                key = fmt.Sprintf("arg_%d", i)
+            }
+            event = event.Interface(key, fields[i+1])
+        }
+        return event
+    }
+
+    if len(fields) > 0 {
+        return event.Interface("args", fields)
+    }
+    return event
 }
 
 func NewProxy(backendURLs []*url.URL, hostnames []string, lbType string, insecureSkipVerify bool, limit *Limit) http.Handler {
@@ -96,13 +137,10 @@ func NewProxy(backendURLs []*url.URL, hostnames []string, lbType string, insecur
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to add rate to rate set")
 			} else {
-				// Create a logrus logger that discards output to suppress internal logs
-				discardLogger := logrus.New()
-				discardLogger.SetOutput(io.Discard)
-
-				rateLimiter, err := ratelimit.New(handler, extractor, rates,
-					ratelimit.ErrorHandler(&rateLimitErrorHandler{}),
-					ratelimit.Logger(discardLogger))
+                // Create the rate limiter with structured logging and custom error handler
+                rateLimiter, err := ratelimit.New(handler, extractor, rates,
+                    ratelimit.Logger(zerologOxyLogger{}),
+                    ratelimit.ErrorHandler(&rateLimitErrorHandler{}))
 				if err != nil {
 					log.Error().Err(err).Msg("Failed to create rate limiter")
 				} else {

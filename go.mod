@@ -8,7 +8,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
 	github.com/vulcand/oxy/v2 v2.0.3
-	github.com/vulcand/oxy/v2 v2.0.3
 )
 
 require (
