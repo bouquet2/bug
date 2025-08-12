@@ -1,0 +1,69 @@
+version: 1
+
+bug:
+  debug: true
+  ip: localhost
+  port: 8443
+  # acceptable values: https, http
+  # default: http
+  protocol: https
+  # acceptable values: roundrobin, none
+  # default: roundrobin 
+  lb: roundrobin
+  limit:
+    requests: 3
+    every: 60 # seconds
+  tls:
+    cert: /path/to/cert.pem
+    key: /path/to/key.pem
+
+
+routes:
+  - name: example_route
+    lb: roundrobin
+    hostnames:
+      - test.example.com
+    paths:
+      - path: /
+        # acceptable values: Prefix, Exact
+        # default: Prefix
+        type: Prefix
+        limit:
+          requests: 3
+          every: Hour
+    rules:
+      insecureSkipVerify: true
+      backendRefs:
+        - ip: localhost
+          port: 8080
+          # acceptable values: https, http (use streams for tcp/udp)
+          protocol: https
+          tls:
+            cert: /path/to/cert.pem
+            key: /path/to/key.pem
+
+# Streams: raw TCP/UDP forwarding examples
+streams:
+  - name: tcp_echo
+    protocol: tcp
+    lb: roundrobin
+    listen:
+      ip: 0.0.0.0
+      port: 7000
+    rules:
+      - backendRefs:
+          - ip: 127.0.0.1
+            port: 9001
+          - ip: 127.0.0.1
+            port: 9002
+
+  - name: udp_syslog
+    protocol: udp
+    lb: none
+    listen:
+      ip: 0.0.0.0
+      port: 7001
+    rules:
+      - backendRefs:
+          - ip: 127.0.0.1
+            port: 9003
