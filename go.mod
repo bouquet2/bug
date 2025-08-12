@@ -3,7 +3,7 @@ module github.com/bouquet2/bug
 go 1.24.4
 
 require (
-	github.com/fsnotify/fsnotify v1.8.0
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/rs/zerolog v1.34.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.20.1
