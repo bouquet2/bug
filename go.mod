@@ -5,7 +5,7 @@ go 1.24.4
 require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/rs/zerolog v1.34.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/viper v1.21.0
 	github.com/vulcand/oxy/v2 v2.0.3
 )
